@@ -65,16 +65,18 @@
     .logo-nicadpi:hover { box-shadow: 0 0 0 3px var(--primary), 0 0 40px rgba(43,191,191,0.45); }
     .logo-nicadpi img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
 
-    /* Down Association — screen-blended on dark */
+    /* Down Association — fondo blanco igual que NICADPI */
     .logo-down {
       width: 88px; height: 88px;
-      border-radius: 50%; overflow: hidden;
-      background: var(--bg);
+      background: #fff;
+      border-radius: 50%;
+      padding: 5px;
+      display: flex; align-items: center; justify-content: center;
       box-shadow: 0 0 0 2px rgba(159,122,234,0.4), 0 0 28px rgba(159,122,234,0.3);
       transition: box-shadow 0.3s;
     }
     .logo-down:hover { box-shadow: 0 0 0 3px #9F7AEA, 0 0 40px rgba(159,122,234,0.45); }
-    .logo-down img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: screen; }
+    .logo-down img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
 
     .title-block { text-align: center; }
     .title-main {
@@ -507,10 +509,8 @@
       b.textContent = n;
       b.setAttribute('role', 'listitem');
       b.setAttribute('aria-label', `Número ${n}`);
-      b.style.background  = color;
-      b.style.color       = '#fff';
-      b.style.setProperty('color', color); // for box-shadow via currentColor
-      b.style.background  = color;
+      b.style.background = color;
+      b.style.color      = '#fff';
       if (idx === 0) b.style.boxShadow = `0 0 14px ${color}`;
       row.appendChild(b);
     });

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matebingo Solidario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Righteous&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0B1929;
+      --surface:      rgba(255,255,255,0.06);
+      --surface-hov:  rgba(255,255,255,0.12);
+      --primary:      #2BBFBF;
+      --primary-glow: rgba(43,191,191,0.35);
+      --gold:         #F5C840;
+      --gold-glow:    rgba(245,200,64,0.35);
+      --text:         #FFFFFF;
+      --muted:        rgba(255,255,255,0.5);
+      --border:       rgba(255,255,255,0.09);
+      /* Down logo palette — for history bubbles */
+      --c1: #E53E3E; --c2: #F6972A; --c3: #ECC94B;
+      --c4: #48BB78; --c5: #4299E1; --c6: #9F7AEA;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Poppins', sans-serif; overflow: hidden; }
+
+    /* Ambient glow in background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 60% 50% at 15% 50%, rgba(43,191,191,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 50% at 85% 50%, rgba(159,122,234,0.07) 0%, transparent 70%);
+    }
+
+    /* ── APP SHELL ─────────────────────────────── */
+    .app { height: 100dvh; display: flex; flex-direction: column; position: relative; z-index: 1; }
+
+    /* ── HEADER ────────────────────────────────── */
+    header {
+      display: grid;
+      grid-template-columns: 160px 1fr 160px;
+      align-items: center;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .logo-slot { display: flex; align-items: center; justify-content: center; }
+
+    /* NICADPI — light circular mount */
+    .logo-nicadpi {
+      width: 88px; height: 88px;
+      background: #fff;
+      border-radius: 50%;
+      padding: 5px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 2px rgba(43,191,191,0.4), 0 0 28px rgba(43,191,191,0.3);
+      transition: box-shadow 0.3s;
+    }
+    .logo-nicadpi:hover { box-shadow: 0 0 0 3px var(--primary), 0 0 40px rgba(43,191,191,0.45); }
+    .logo-nicadpi img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+
+    /* Down Association — screen-blended on dark */
+    .logo-down {
+      width: 88px; height: 88px;
+      border-radius: 50%; overflow: hidden;
+      background: var(--bg);
+      box-shadow: 0 0 0 2px rgba(159,122,234,0.4), 0 0 28px rgba(159,122,234,0.3);
+      transition: box-shadow 0.3s;
+    }
+    .logo-down:hover { box-shadow: 0 0 0 3px #9F7AEA, 0 0 40px rgba(159,122,234,0.45); }
+    .logo-down img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: screen; }
+
+    .title-block { text-align: center; }
+    .title-main {
+      font-family: 'Righteous', sans-serif;
+      font-size: clamp(24px, 3.2vw, 50px);
+      letter-spacing: 0.03em; line-height: 1;
+      background: linear-gradient(110deg, var(--primary) 10%, #7FEFEF 45%, var(--gold) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .title-sub {
+      font-size: clamp(9px, 0.9vw, 12px);
+      color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 5px;
+    }
+
+    /* ── CONTROLS ──────────────────────────────── */
+    .controls {
+      display: grid;
+      grid-template-columns: 150px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 8px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Last drawn */
+    .last-panel {
+      background: var(--surface);
+      border: 1px solid rgba(245,200,64,0.25);
+      border-radius: 14px;
+      padding: 6px 14px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 72px;
+    }
+    .last-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); margin-bottom: 2px; }
+    .last-number {
+      font-family: 'Righteous', sans-serif;
+      font-size: clamp(36px, 3.8vw, 52px);
+      line-height: 1; color: var(--gold);
+      text-shadow: 0 0 20px var(--gold-glow), 0 0 40px var(--gold-glow);
+    }
+    .last-number.pop { animation: numPop 0.38s cubic-bezier(0.175,0.885,0.32,1.275); }
+    @keyframes numPop {
+      0%   { transform: scale(0.45); opacity: 0; }
+      65%  { transform: scale(1.18); }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+
+    /* History */
+    .history-panel { display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+    .history-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+    .history-row {
+      display: flex; gap: 7px; align-items: center;
+      flex-wrap: nowrap; overflow: hidden;
+    }
+    .bubble {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Righteous', sans-serif; font-size: 14px;
+      color: #fff; flex-shrink: 0; transition: transform 0.2s;
+    }
+    .bubble:first-child {
+      width: 48px; height: 48px; font-size: 17px;
+      box-shadow: 0 0 14px currentColor;
+    }
+    .bubble-enter { animation: bubbleIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275); }
+    @keyframes bubbleIn { from { transform: scale(0) rotate(-15deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+
+    /* Input / actions */
+    .actions-panel { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .input-row { display: flex; gap: 8px; align-items: center; }
+
+    .num-input {
+      width: 76px; height: 42px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: 'Righteous', sans-serif; font-size: 22px;
+      text-align: center; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .num-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .num-input::-webkit-inner-spin-button, .num-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .num-input[type=number] { -moz-appearance: textfield; }
+    .num-input.err { border-color: #FC8181; animation: shake 0.32s ease; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+    .btn {
+      height: 42px; border-radius: 10px; border: none; cursor: pointer;
+      font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 13px;
+      display: flex; align-items: center; gap: 5px; padding: 0 14px;
+      transition: all 0.18s ease; white-space: nowrap;
+    }
+    .btn:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+    .btn svg { flex-shrink: 0; }
+
+    .btn-primary { background: var(--primary); color: #0B1929; }
+    .btn-primary:hover { background: #3DD6D6; transform: translateY(-1px); box-shadow: 0 4px 16px var(--primary-glow); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-ghost { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface-hov); color: var(--text); }
+
+    .btn-danger { background: transparent; color: #FC8181; border: 1px solid rgba(252,129,129,0.28); }
+    .btn-danger:hover { background: rgba(252,129,129,0.1); border-color: rgba(252,129,129,0.55); }
+
+    .counter { font-size: 11px; color: var(--muted); }
+    .counter b { color: var(--primary); font-weight: 700; }
+
+    /* ── GRID ──────────────────────────────────── */
+    .grid-wrapper {
+      flex: 1 1 0; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 20px;
+    }
+
+    .bingo-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: clamp(4px, 0.45vw, 7px);
+      /* Square: constrained by available height or width */
+      width: min(calc(100dvh - 220px), calc(100vw - 40px));
+      aspect-ratio: 1 / 1;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: clamp(6px, 0.7vw, 11px);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Righteous', sans-serif;
+      font-size: clamp(12px, 1.4vw, 20px);
+      color: var(--muted);
+      cursor: pointer; user-select: none;
+      transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s, box-shadow 0.18s;
+      position: relative; overflow: hidden;
+    }
+    .cell:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+    .cell:hover:not(.drawn) {
+      background: var(--surface-hov);
+      border-color: rgba(43,191,191,0.5);
+      color: var(--text);
+      transform: scale(1.07);
+    }
+    .cell:active:not(.drawn) { transform: scale(0.96); }
+
+    /* Already drawn — subtle bounce on click */
+    .cell.already { animation: alreadyBounce 0.3s ease; }
+    @keyframes alreadyBounce { 0%,100%{transform:scale(1)} 40%{transform:scale(0.92)} 70%{transform:scale(1.04)} }
+
+    .cell.drawn {
+      background: var(--primary);
+      border-color: transparent;
+      color: #0B1929;
+      font-weight: 700;
+      cursor: default;
+    }
+    .cell.drawn:hover { transform: none; }
+
+    /* Highlight the last-drawn cell in gold */
+    .cell.drawn.is-last {
+      background: var(--gold);
+      box-shadow: 0 0 0 2px rgba(245,200,64,0.6), 0 0 22px var(--gold-glow), 0 0 44px rgba(245,200,64,0.2);
+      animation: cellPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes cellPulse {
+      0%,100% { box-shadow: 0 0 0 2px rgba(245,200,64,0.6), 0 0 22px var(--gold-glow); }
+      50%      { box-shadow: 0 0 0 3px rgba(245,200,64,0.9), 0 0 38px rgba(245,200,64,0.5), 0 0 60px rgba(245,200,64,0.2); }
+    }
+
+    /* Draw-in animation */
+    .cell.draw-in { animation: drawIn 0.36s cubic-bezier(0.175,0.885,0.32,1.275) both; }
+    @keyframes drawIn {
+      from { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0); opacity: 1; }
+    }
+
+    /* ── FOOTER ────────────────────────────────── */
+    footer {
+      text-align: center; padding: 6px;
+      border-top: 1px solid var(--border);
+      font-size: 10px; color: var(--muted); letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+
+    /* ── MODAL ─────────────────────────────────── */
+    .modal-bg {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(5px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-bg.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: #0F2235; border: 1px solid var(--border);
+      border-radius: 20px; padding: 32px 36px;
+      max-width: 400px; width: 90%; text-align: center;
+      transform: scale(0.88); transition: transform 0.22s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+    .modal-bg.open .modal { transform: scale(1); }
+    .modal h2 { font-family: 'Righteous', sans-serif; font-size: 22px; color: var(--gold); margin-bottom: 10px; }
+    .modal p { color: var(--muted); line-height: 1.65; margin-bottom: 24px; font-size: 14px; }
+    .modal-btns { display: flex; gap: 12px; justify-content: center; }
+
+    /* ── TOAST ─────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #1A3050; border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 20px;
+      font-size: 13px; color: var(--text); opacity: 0;
+      transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 300;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── RESPONSIVE ────────────────────────────── */
+    @media (max-width: 800px) {
+      header { grid-template-columns: 72px 1fr 72px; padding: 8px 12px; }
+      .logo-nicadpi, .logo-down { width: 64px; height: 64px; }
+      .controls { grid-template-columns: 1fr; gap: 8px; padding: 8px 12px; }
+      .last-panel { flex-direction: row; gap: 10px; min-height: auto; padding: 6px 12px; }
+      .actions-panel { align-items: stretch; }
+      .input-row { justify-content: flex-start; flex-wrap: wrap; }
+      .bingo-grid { width: min(calc(100dvh - 280px), calc(100vw - 24px)); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-slot">
+      <div class="logo-nicadpi">
+        <img src="logo-nicadpi.png" alt="NICADPI — Centro de Día, Trelew Chubut">
+      </div>
+    </div>
+
+    <div class="title-block">
+      <h1 class="title-main">Matebingo Solidario</h1>
+      <p class="title-sub">NICADPI &amp; Asociación de Padres de Niños con Síndrome de Down · Trelew, Chubut</p>
+    </div>
+
+    <div class="logo-slot">
+      <div class="logo-down">
+        <img src="logo-down.png" alt="Asociación de Padres de Niños con Síndrome de Down">
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTROLS -->
+  <section class="controls" aria-label="Panel de control del sorteo">
+
+    <!-- Último número -->
+    <div class="last-panel" role="status" aria-live="polite" aria-label="Último número sorteado">
+      <span class="last-label">Último número</span>
+      <span class="last-number" id="lastNum">—</span>
+    </div>
+
+    <!-- Historial -->
+    <div class="history-panel">
+      <span class="history-label">Historial reciente</span>
+      <div class="history-row" id="historyRow" role="list" aria-label="Últimos números sorteados"></div>
+    </div>
+
+    <!-- Input + botones -->
+    <div class="actions-panel">
+      <div class="input-row">
+        <input
+          id="numInput"
+          class="num-input"
+          type="number"
+          min="0" max="99"
+          placeholder="00"
+          autocomplete="off"
+          aria-label="Ingresar número sorteado (00 al 99)"
+        >
+        <button class="btn btn-primary" id="markBtn" aria-label="Marcar número ingresado">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Marcar
+        </button>
+        <button class="btn btn-ghost" id="undoBtn" aria-label="Deshacer último número marcado" title="Deshacer (Ctrl+Z)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+          Deshacer
+        </button>
+        <button class="btn btn-danger" id="resetBtn" aria-label="Iniciar nueva partida">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          Nueva partida
+        </button>
+      </div>
+      <div class="counter" aria-live="polite">
+        <b id="drawnCount">0</b> de 100 números sorteados
+      </div>
+    </div>
+
+  </section>
+
+  <!-- TABLERO -->
+  <main class="grid-wrapper">
+    <div class="bingo-grid" id="bingoGrid" role="grid" aria-label="Tablero Matebingo: números del 00 al 99"></div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    Matebingo Solidario · NICADPI &amp; Asociación de Padres de Niños con Síndrome de Down · Trelew, Chubut
+  </footer>
+
+</div>
+
+<!-- MODAL CONFIRMACIÓN -->
+<div class="modal-bg" id="modalBg" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <h2 id="modalTitle">¿Iniciar nueva partida?</h2>
+    <p>Se borrarán todos los números sorteados y el tablero quedará en blanco.</p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" id="cancelReset">Cancelar</button>
+      <button class="btn btn-danger" id="confirmReset">Sí, nueva partida</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+
+<script>
+  /* ─── CONSTANTS ──────────────────────────── */
+  const COLORS = ['#E53E3E','#F6972A','#ECC94B','#48BB78','#4299E1','#9F7AEA'];
+  const MAX_VISIBLE = 9;
+
+  /* ─── STATE ──────────────────────────────── */
+  let drawn   = new Set();   // '00'..'99'
+  let history = [];          // ordered: ['05','47','32',...]
+
+  /* ─── BUILD GRID ─────────────────────────── */
+  const gridEl = document.getElementById('bingoGrid');
+
+  for (let i = 0; i <= 99; i++) {
+    const n = pad(i);
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.id = `c-${n}`;
+    cell.textContent = n;
+    cell.setAttribute('role', 'gridcell');
+    cell.setAttribute('tabindex', '0');
+    cell.setAttribute('aria-label', `Número ${n}`);
+    cell.addEventListener('click', () => handleCellClick(n));
+    cell.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCellClick(n); }
+    });
+    gridEl.appendChild(cell);
+  }
+
+  /* ─── CELL CLICK ─────────────────────────── */
+  function handleCellClick(n) {
+    if (drawn.has(n)) {
+      /* already drawn → bounce animation + toast */
+      const cell = document.getElementById(`c-${n}`);
+      cell.classList.remove('already');
+      void cell.offsetWidth;
+      cell.classList.add('already');
+      showToast(`El número ${n} ya fue sorteado`);
+      return;
+    }
+    drawNumber(n);
+  }
+
+  /* ─── CORE: DRAW NUMBER ──────────────────── */
+  function drawNumber(n) {
+    drawn.add(n);
+    history.push(n);
+    renderAll();
+    animateCell(n);
+  }
+
+  /* ─── UNDO ───────────────────────────────── */
+  function undo() {
+    if (history.length === 0) { showToast('No hay números para deshacer'); return; }
+    const last = history.pop();
+    drawn.delete(last);
+    renderAll();
+    showToast(`Número ${last} desmarcado`);
+  }
+
+  /* ─── RESET ──────────────────────────────── */
+  function reset() {
+    drawn.clear();
+    history = [];
+    renderAll();
+  }
+
+  /* ─── RENDER ─────────────────────────────── */
+  function renderAll() {
+    const lastN = history.at(-1) ?? null;
+
+    /* Grid */
+    for (let i = 0; i <= 99; i++) {
+      const n = pad(i);
+      const cell = document.getElementById(`c-${n}`);
+      const isDrawn = drawn.has(n);
+      const isLast  = n === lastN;
+      cell.classList.toggle('drawn',   isDrawn);
+      cell.classList.toggle('is-last', isLast);
+      cell.setAttribute('aria-pressed', isDrawn ? 'true' : 'false');
+    }
+
+    /* Last drawn display */
+    const lastEl = document.getElementById('lastNum');
+    if (lastN !== null) {
+      lastEl.textContent = lastN;
+      lastEl.classList.remove('pop');
+      void lastEl.offsetWidth;
+      lastEl.classList.add('pop');
+    } else {
+      lastEl.textContent = '—';
+    }
+
+    /* History bubbles */
+    const row = document.getElementById('historyRow');
+    row.innerHTML = '';
+    history.slice(-MAX_VISIBLE).reverse().forEach((n, idx) => {
+      const globalPos = history.lastIndexOf(n);
+      const color = COLORS[globalPos % COLORS.length];
+      const b = document.createElement('div');
+      b.className = 'bubble' + (idx === 0 ? ' bubble-enter' : '');
+      b.textContent = n;
+      b.setAttribute('role', 'listitem');
+      b.setAttribute('aria-label', `Número ${n}`);
+      b.style.background  = color;
+      b.style.color       = '#fff';
+      b.style.setProperty('color', color); // for box-shadow via currentColor
+      b.style.background  = color;
+      if (idx === 0) b.style.boxShadow = `0 0 14px ${color}`;
+      row.appendChild(b);
+    });
+
+    /* Counter */
+    document.getElementById('drawnCount').textContent = drawn.size;
+  }
+
+  function animateCell(n) {
+    const cell = document.getElementById(`c-${n}`);
+    cell.classList.remove('draw-in');
+    void cell.offsetWidth;
+    cell.classList.add('draw-in');
+    cell.addEventListener('animationend', () => cell.classList.remove('draw-in'), { once: true });
+  }
+
+  /* ─── INPUT HANDLING ─────────────────────── */
+  const input   = document.getElementById('numInput');
+  const markBtn = document.getElementById('markBtn');
+
+  function processInput() {
+    const raw = input.value.trim();
+    if (raw === '') return;
+    const num = parseInt(raw, 10);
+    if (isNaN(num) || num < 0 || num > 99) {
+      flashInput();
+      showToast('Ingresá un número entre 00 y 99');
+      return;
+    }
+    const n = pad(num);
+    if (drawn.has(n)) {
+      flashInput();
+      showToast(`El número ${n} ya fue sorteado`);
+      return;
+    }
+    drawNumber(n);
+    input.value = '';
+    input.focus();
+  }
+
+  function flashInput() {
+    input.classList.remove('err');
+    void input.offsetWidth;
+    input.classList.add('err');
+    input.addEventListener('animationend', () => input.classList.remove('err'), { once: true });
+  }
+
+  markBtn.addEventListener('click', processInput);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') processInput(); });
+
+  /* ─── UNDO BUTTON ────────────────────────── */
+  document.getElementById('undoBtn').addEventListener('click', undo);
+
+  /* ─── RESET MODAL ────────────────────────── */
+  const modalBg = document.getElementById('modalBg');
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    modalBg.classList.add('open');
+    document.getElementById('cancelReset').focus();
+  });
+  document.getElementById('cancelReset').addEventListener('click', () => modalBg.classList.remove('open'));
+  document.getElementById('confirmReset').addEventListener('click', () => {
+    modalBg.classList.remove('open');
+    reset();
+    input.focus();
+  });
+  modalBg.addEventListener('click', e => { if (e.target === modalBg) modalBg.classList.remove('open'); });
+
+  /* ─── KEYBOARD SHORTCUTS ─────────────────── */
+  document.addEventListener('keydown', e => {
+    if (modalBg.classList.contains('open')) {
+      if (e.key === 'Escape') modalBg.classList.remove('open');
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+  });
+
+  /* ─── TOAST ──────────────────────────────── */
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* ─── UTILS ──────────────────────────────── */
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  /* ─── INIT ───────────────────────────────── */
+  renderAll();
+  input.focus();
+</script>
+
+</body>
+</html>
